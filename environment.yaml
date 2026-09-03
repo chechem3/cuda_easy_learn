@@ -1,0 +1,9 @@
+name: py12_cuda_env
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - cuda-nvcc
+  - cuda-nvdisasm
+  - cuda-cuobjdump
+prefix: /home/string/miniconda3/envs/py12_cuda_env
