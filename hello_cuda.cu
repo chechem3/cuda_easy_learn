@@ -15,7 +15,7 @@ int main() {
     printf("=== CUDA Hello World 程序 ===\n\n");
 
     // 定义线程组织结构
-    int numBlocks = 2;      // 2 个线程块
+    int numBlocks = 30;      // 2 个线程块
     int threadsPerBlock = 4; // 每个块 4 个线程
 
     printf("启动 GPU 核函数...\n");
