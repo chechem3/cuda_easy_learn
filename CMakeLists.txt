@@ -67,9 +67,13 @@ add_custom_target(advanced DEPENDS ${INTERMEDIATE} ${MEMORY_OPT})
 # 实战篇 (11-15) - 部分需要额外库
 # ============================================================================
 
-# 11: 矩阵乘法 - 需要 cuBLAS
-add_executable(11_matrix_multiply 11_matrix_multiply.cu)
-target_link_libraries(11_matrix_multiply PRIVATE CUDA::cublas)
+# 11: 矩阵乘法 - 需要 cuBLAS (conda: cuda-cublas-dev)
+if(TARGET CUDA::cublas)
+    add_executable(11_matrix_multiply 11_matrix_multiply.cu)
+    target_link_libraries(11_matrix_multiply PRIVATE CUDA::cublas)
+else()
+    message(STATUS "cuBLAS not found, skipping 11_matrix_multiply")
+endif()
 
 # 12: 性能分析 - 无额外依赖
 add_executable(12_profiling_debug 12_profiling_debug.cu)
@@ -91,11 +95,13 @@ add_executable(15_thrust_practical 15_thrust_practical.cu)
 
 # 实战篇分组目标
 set(PRACTICAL_TARGETS
-    11_matrix_multiply
     12_profiling_debug
     14_multi_gpu
     15_thrust_practical
 )
+if(TARGET CUDA::cublas)
+    list(APPEND PRACTICAL_TARGETS 11_matrix_multiply)
+endif()
 if(CUDADEVRT_LIBRARY)
     list(APPEND PRACTICAL_TARGETS 13_dynamic_parallelism)
 endif()
@@ -115,27 +121,44 @@ else()
     message(STATUS "cuDNN not found, skipping 16_cudnn_deeplearning")
 endif()
 
-# 17: cuFFT
-add_executable(17_cufft 17_cufft.cu)
-target_link_libraries(17_cufft PRIVATE CUDA::cufft)
+# 17: cuFFT (conda: cuda-cufft-dev)
+if(TARGET CUDA::cufft)
+    add_executable(17_cufft 17_cufft.cu)
+    target_link_libraries(17_cufft PRIVATE CUDA::cufft)
+else()
+    message(STATUS "cuFFT not found, skipping 17_cufft")
+endif()
 
-# 18: cuSPARSE
-add_executable(18_cusparse 18_cusparse.cu)
-target_link_libraries(18_cusparse PRIVATE CUDA::cusparse)
+# 18: cuSPARSE (conda: cuda-cusparse-dev)
+if(TARGET CUDA::cusparse)
+    add_executable(18_cusparse 18_cusparse.cu)
+    target_link_libraries(18_cusparse PRIVATE CUDA::cusparse)
+else()
+    message(STATUS "cuSPARSE not found, skipping 18_cusparse")
+endif()
 
-# 19: cuRAND
-add_executable(19_curand 19_curand.cu)
-target_link_libraries(19_curand PRIVATE CUDA::curand)
+# 19: cuRAND (conda: cuda-curand-dev)
+if(TARGET CUDA::curand)
+    add_executable(19_curand 19_curand.cu)
+    target_link_libraries(19_curand PRIVATE CUDA::curand)
+else()
+    message(STATUS "cuRAND not found, skipping 19_curand")
+endif()
 
 # 20: CUDA Graphs - 无额外依赖
 add_executable(20_cuda_graphs 20_cuda_graphs.cu)
 
-add_custom_target(libraries DEPENDS
-    17_cufft
-    18_cusparse
-    19_curand
-    20_cuda_graphs
-)
+set(LIBRARIES_TARGETS 20_cuda_graphs)
+if(TARGET CUDA::cufft)
+    list(APPEND LIBRARIES_TARGETS 17_cufft)
+endif()
+if(TARGET CUDA::cusparse)
+    list(APPEND LIBRARIES_TARGETS 18_cusparse)
+endif()
+if(TARGET CUDA::curand)
+    list(APPEND LIBRARIES_TARGETS 19_curand)
+endif()
+add_custom_target(libraries DEPENDS ${LIBRARIES_TARGETS})
 
 # ============================================================================
 # 高级篇 (21-25)
@@ -157,8 +180,12 @@ else()
 endif()
 
 # 22: 内存池 - 需要 CUDA Driver API
-add_executable(22_memory_pools 22_memory_pools.cu)
-target_link_libraries(22_memory_pools PRIVATE CUDA::cuda_driver)
+if(TARGET CUDA::cuda_driver)
+    add_executable(22_memory_pools 22_memory_pools.cu)
+    target_link_libraries(22_memory_pools PRIVATE CUDA::cuda_driver)
+else()
+    message(STATUS "CUDA driver library not found, skipping 22_memory_pools")
+endif()
 
 # 23: 协作组高级 - 需要分离编译
 if(CUDADEVRT_LIBRARY)
@@ -177,10 +204,12 @@ add_executable(25_deep_learning_integration 25_deep_learning_integration.cu)
 
 # 高级篇分组目标
 set(HIGH_LEVEL_TARGETS
-    22_memory_pools
     24_optimization_workshop
     25_deep_learning_integration
 )
+if(TARGET CUDA::cuda_driver)
+    list(APPEND HIGH_LEVEL_TARGETS 22_memory_pools)
+endif()
 if(CUDADEVRT_LIBRARY)
     list(APPEND HIGH_LEVEL_TARGETS 23_cooperative_groups_advanced)
 endif()
@@ -221,12 +250,20 @@ add_custom_target(special_topics DEPENDS
 add_executable(31_neural_network_inference 31_neural_network_inference.cu)
 
 # 32: 实时视频处理 - 需要 cuFFT
-add_executable(32_realtime_video_processing 32_realtime_video_processing.cu)
-target_link_libraries(32_realtime_video_processing PRIVATE CUDA::cufft)
+if(TARGET CUDA::cufft)
+    add_executable(32_realtime_video_processing 32_realtime_video_processing.cu)
+    target_link_libraries(32_realtime_video_processing PRIVATE CUDA::cufft)
+else()
+    message(STATUS "cuFFT not found, skipping 32_realtime_video_processing")
+endif()
 
 # 33: 科学计算 - 需要 cuRAND
-add_executable(33_scientific_computing 33_scientific_computing.cu)
-target_link_libraries(33_scientific_computing PRIVATE CUDA::curand)
+if(TARGET CUDA::curand)
+    add_executable(33_scientific_computing 33_scientific_computing.cu)
+    target_link_libraries(33_scientific_computing PRIVATE CUDA::curand)
+else()
+    message(STATUS "cuRAND not found, skipping 33_scientific_computing")
+endif()
 
 # 34: Jetson 嵌入式 - 无额外依赖
 add_executable(34_jetson_embedded 34_jetson_embedded.cu)
@@ -234,13 +271,18 @@ add_executable(34_jetson_embedded 34_jetson_embedded.cu)
 # 35: HPC 前沿 - 无额外依赖
 add_executable(35_hpc_future 35_hpc_future.cu)
 
-add_custom_target(frontier DEPENDS
+set(FRONTIER_TARGETS
     31_neural_network_inference
-    32_realtime_video_processing
-    33_scientific_computing
     34_jetson_embedded
     35_hpc_future
 )
+if(TARGET CUDA::cufft)
+    list(APPEND FRONTIER_TARGETS 32_realtime_video_processing)
+endif()
+if(TARGET CUDA::curand)
+    list(APPEND FRONTIER_TARGETS 33_scientific_computing)
+endif()
+add_custom_target(frontier DEPENDS ${FRONTIER_TARGETS})
 
 # ============================================================================
 # 全部编译目标

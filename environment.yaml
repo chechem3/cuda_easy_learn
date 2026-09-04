@@ -1,9 +1,30 @@
+# CUDA 教程 conda 环境 (WSL Ubuntu 24.04, RTX 4070 Laptop / sm_89, CUDA 13.3.73)
+# 创建:  conda env create -f environment.yaml
+# 激活:  conda activate py12_cuda_env
+# 构建:  ./build.sh          (激活环境后)
+#
+# 说明:
+# - cuda-version=13.3 是总约束, 保证 nvcc/cudart/nvrtc 等核心组件版本配套
+# - 数学库用 defaults 渠道新命名 (libcublas-dev 等; nvidia channel 的
+#   cuda-cublas-dev 旧命名已于 2026-08 渠道迁移后移除), 各库版本号独立演进
+# - 需要第 16 课 cuDNN 时: conda install -n py12_cuda_env cudnn=9.*
+# - 本文件只记录"用户视角"的包, 依赖细节由 conda 求解器解析
 name: py12_cuda_env
 channels:
   - defaults
+  - nvidia
 dependencies:
   - python=3.12
-  - cuda-nvcc
-  - cuda-nvdisasm
-  - cuda-cuobjdump
-prefix: /home/string/miniconda3/envs/py12_cuda_env
+  - cuda-version=13.3
+  # ---- 编译器工具链 ----
+  - cuda-nvcc=13.3            # nvcc/ptxas/cudafe++/fatbinary/nvlink
+  - cuda-cudart-dev=13.3      # cuda_runtime.h + libcudart (自动附带运行时)
+  - cuda-cccl                 # Thrust/CUB/libcudacxx (第 15 课)
+  # ---- 二进制分析工具 (调研用, 可选) ----
+  - cuda-cuobjdump=13.3
+  - cuda-nvdisasm=13.3
+  # ---- 数学库 (第 11/17/18/19/32/33 课) ----
+  - libcublas-dev=13.6
+  - libcufft-dev=12.3
+  - libcurand-dev=10.4
+  - libcusparse-dev=12.8

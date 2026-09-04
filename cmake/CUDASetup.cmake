@@ -21,8 +21,11 @@ endif()
 # ============================================================================
 # GPU 架构设置
 # ============================================================================
-# 如果未指定架构，尝试自动检测
-if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+# 说明: CMake 3.20+ 会把 CMAKE_CUDA_ARCHITECTURES 初始化为编译器默认值
+# (nvcc 13.x 默认 sm_75), 无法据此可靠判断"用户是否显式指定过架构"。
+# 因此本工程默认总是按本机 GPU 自动检测:
+#   - 想手动指定: -DCUDA_TUTORIAL_SKIP_ARCH_DETECT=ON -DCMAKE_CUDA_ARCHITECTURES=86
+if(NOT CUDA_TUTORIAL_SKIP_ARCH_DETECT)
     # 尝试运行 nvidia-smi 获取 GPU 信息
     execute_process(
         COMMAND nvidia-smi --query-gpu=compute_cap --format=csv,noheader
@@ -33,23 +36,29 @@ if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
     )
 
     if(NVIDIA_SMI_RESULT EQUAL 0 AND GPU_COMPUTE_CAP)
-        # 解析计算能力 (例如 "8.7" -> "87")
+        # 解析计算能力 (例如 "8.9" -> "89")
         string(REGEX MATCH "([0-9]+)\\.([0-9]+)" _ ${GPU_COMPUTE_CAP})
         set(DETECTED_ARCH "${CMAKE_MATCH_1}${CMAKE_MATCH_2}")
         set(CMAKE_CUDA_ARCHITECTURES ${DETECTED_ARCH})
         message(STATUS "Auto-detected GPU architecture: sm_${DETECTED_ARCH}")
     else()
-        # 默认支持常见架构
-        # 60: Pascal (GTX 1080, Tesla P100)
-        # 70: Volta (Tesla V100)
-        # 75: Turing (RTX 2080, T4)
-        # 80: Ampere (RTX 3080, A100)
-        # 86: Ampere (RTX 3060, 3070, 3090)
-        # 87: Jetson Orin
-        # 89: Ada Lovelace (RTX 4090)
-        # 90: Hopper (H100)
-        set(CMAKE_CUDA_ARCHITECTURES 60 70 75 80 86)
-        message(STATUS "Using default GPU architectures: ${CMAKE_CUDA_ARCHITECTURES}")
+        # 探测失败时的兜底
+        if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
+            # 交给 CMake 按"运行编译的机器"自动选择 (需要 CMake 3.24+)
+            set(CMAKE_CUDA_ARCHITECTURES native)
+        else()
+            # 默认支持常见架构
+            # 60: Pascal (GTX 1080, Tesla P100)
+            # 70: Volta (Tesla V100)
+            # 75: Turing (RTX 2080, T4)
+            # 80: Ampere (RTX 3080, A100)
+            # 86: Ampere (RTX 3060, 3070, 3090)
+            # 87: Jetson Orin
+            # 89: Ada Lovelace (RTX 4090)
+            # 90: Hopper (H100)
+            set(CMAKE_CUDA_ARCHITECTURES 60 70 75 80 86)
+        endif()
+        message(STATUS "nvidia-smi unavailable, using default GPU architectures: ${CMAKE_CUDA_ARCHITECTURES}")
     endif()
 endif()
 
